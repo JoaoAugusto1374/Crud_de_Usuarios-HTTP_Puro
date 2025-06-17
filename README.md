@@ -58,5 +58,5 @@ Implementar métodos POST, PUT para formulários.
 
 Usar framework como Flask para facilitar manutenção.
 
-## Autor
-João Augusto Pereira França
+## Autores
+João Augusto, Halina e Ana Júlia.
