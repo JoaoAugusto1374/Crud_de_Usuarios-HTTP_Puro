@@ -1,26 +1,17 @@
-from server.plumbing import extract_path_params
+import re
 
-class Router:
-    def __init__(self):
-        self.routes = []
-
-    def add_route(self, path, func, methods):
-        self.routes.append({"path": path, "func": func, "methods": methods})
-
-    def handle(self, request, method):
-        path = request.path
-
-        for route in self.routes:
-            if route["path"] == path and method in route["methods"]:
-                return route["func"](request, request)
-
-            # Suporte simples para rotas com <id> (exemplo: /usuarios/1)
-            if "<id>" in route["path"]:
-                base_path = route["path"].split("<id>")[0]
-                if path.startswith(base_path) and method in route["methods"]:
-                    id = path.replace(base_path, "").split("/")[0]
-                    return route["func"](request, request, id)
-
-        request.send_response(404)
-        request.end_headers()
-        request.wfile.write(b"Rota nao encontrada.")
+def handle(request, app, method):
+    path = request.path
+    for route_path, handler in app.routes.items():
+        path_regex = '^' + re.sub(r'<\w+>', r'(\\d+)', route_path) + '$'
+        match = re.match(path_regex, path)
+        if match:
+            params = match.groups()
+            if params:
+                handler(request, request, *[int(p) for p in params])
+            else:
+                handler(request, request)
+            return
+    request.send_response(404)
+    request.end_headers()
+    request.wfile.write("Rota não encontrada.".encode("utf-8"))

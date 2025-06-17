@@ -9,4 +9,5 @@ app.route("/usuarios/<id>/editar")(editar_usuario)
 app.route("/usuarios/<id>/excluir")(excluir_usuario)
 
 if __name__ == "__main__":
-    app.start()
+    print(f"Servidor rodando em http://localhost:{app.server_port}")
+    app.serve_forever()

@@ -1,25 +1,24 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from server.router import Router
+from server.router import handle
 
-router = Router()
+class Server(HTTPServer):
+    def __init__(self, host='localhost', port=8000):
+        super().__init__((host, port), RequestHandler)
+        self.routes = {}
 
-class ServerHandler(BaseHTTPRequestHandler):
+    def route(self, path):
+        def decorator(func):
+            self.routes[path] = func
+            return func
+        return decorator
+
+    def run(self):
+        print(f"Servidor rodando em http://localhost:{self.server_port}")
+        self.serve_forever()
+
+class RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        router.handle(self, "GET")
+        handle(self, self.server, 'GET')
 
     def do_POST(self):
-        router.handle(self, "POST")
-
-class Server:
-    def __init__(self):
-        self.server = HTTPServer(("localhost", 8000), ServerHandler)
-
-    def route(self, path, methods=["GET"]):
-        def wrapper(func):
-            router.add_route(path, func, methods)
-            return func
-        return wrapper
-
-    def start(self):
-        print("Servidor rodando em http://localhost:8000")
-        self.server.serve_forever()
+        handle(self, self.server, 'POST')

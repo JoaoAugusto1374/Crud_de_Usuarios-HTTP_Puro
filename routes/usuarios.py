@@ -34,12 +34,12 @@ def listar_usuarios(request, response):
     html += "</ul><a href='/usuarios/novo'>Novo usuário</a>"
 
     response.send_response(200)
-    response.send_header("Content-type", "text/html")
+    response.send_header("Content-type", "text/html; charset=utf-8")
     response.end_headers()
-    response.wfile.write(html.encode())
+    response.wfile.write(html.encode("utf-8"))
 
 def novo_usuario(request, response):
-    if request.method == "GET":
+    if request.command == "GET":
         html = """
         <h1>Novo Usuário</h1>
         <form method="POST">
@@ -50,11 +50,12 @@ def novo_usuario(request, response):
         </form>
         """
         response.send_response(200)
-        response.send_header("Content-type", "text/html")
+        response.send_header("Content-type", "text/html; charset=utf-8")
         response.end_headers()
-        response.wfile.write(html.encode())
-    elif request.method == "POST":
-        tamanho = int(request.headers['Content-Length'])
+        response.wfile.write(html.encode("utf-8"))
+
+    elif request.command == "POST":
+        tamanho = int(request.headers.get('Content-Length', 0))
         dados = request.rfile.read(tamanho).decode()
         params = parse_qs(dados)
 
@@ -85,10 +86,10 @@ def excluir_usuario(request, response, id):
     if not usuario:
         response.send_response(404)
         response.end_headers()
-        response.wfile.write(b"Usuário não encontrado")
+        response.wfile.write("Usuário não encontrado".encode("utf-8"))
         return
 
-    if request.method == "GET":
+    if request.command == "GET":
         html = f"""
         <h1>Excluir Usuário</h1>
         <p>Tem certeza que deseja excluir {usuario['nome']}?</p>
@@ -98,10 +99,10 @@ def excluir_usuario(request, response, id):
         <a href="/usuarios">Cancelar</a>
         """
         response.send_response(200)
-        response.send_header("Content-type", "text/html")
+        response.send_header("Content-type", "text/html; charset=utf-8")
         response.end_headers()
-        response.wfile.write(html.encode())
-    elif request.method == "POST":
+        response.wfile.write(html.encode("utf-8"))
+    elif request.command == "POST":
         usuarios = [u for u in usuarios if u["id"] != id]
         salvar_usuarios(usuarios)
         response.send_response(303)
@@ -115,10 +116,10 @@ def editar_usuario(request, response, id):
     if not usuario:
         response.send_response(404)
         response.end_headers()
-        response.wfile.write(b"Usuário não encontrado")
+        response.wfile.write("Usuário não encontrado".encode("utf-8"))
         return
 
-    if request.method == "GET":
+    if request.command == "GET":
         html = f"""
         <h1>Editar Usuário</h1>
         <form method="POST">
@@ -130,11 +131,11 @@ def editar_usuario(request, response, id):
         <a href="/usuarios">Cancelar</a>
         """
         response.send_response(200)
-        response.send_header("Content-type", "text/html")
+        response.send_header("Content-type", "text/html; charset=utf-8")
         response.end_headers()
-        response.wfile.write(html.encode())
-    elif request.method == "POST":
-        tamanho = int(request.headers['Content-Length'])
+        response.wfile.write(html.encode("utf-8"))
+    elif request.command == "POST":
+        tamanho = int(request.headers.get('Content-Length', 0))
         dados = request.rfile.read(tamanho).decode()
         params = parse_qs(dados)
 
