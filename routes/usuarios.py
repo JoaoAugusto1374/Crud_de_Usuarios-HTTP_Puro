@@ -25,3 +25,125 @@ def salvar_usuarios(usuarios):
         for u in usuarios:
             linha = f"{u['id']}|{u['nome']}|{u['email']}|{u['telefone']}\n"
             f.write(linha)
+
+def listar_usuarios(request, response):
+    usuarios = carregar_usuarios()
+    html = "<h1>Lista de Usuários</h1><ul>"
+    for u in usuarios:
+        html += f"<li>{u['nome']} - <a href='/usuarios/{u['id']}/editar'>Editar</a> - <a href='/usuarios/{u['id']}/excluir'>Excluir</a></li>"
+    html += "</ul><a href='/usuarios/novo'>Novo usuário</a>"
+
+    response.send_response(200)
+    response.send_header("Content-type", "text/html")
+    response.end_headers()
+    response.wfile.write(html.encode())
+
+def novo_usuario(request, response):
+    if request.method == "GET":
+        html = """
+        <h1>Novo Usuário</h1>
+        <form method="POST">
+            Nome: <input type="text" name="nome"><br>
+            Email: <input type="text" name="email"><br>
+            Telefone: <input type="text" name="telefone"><br>
+            <button type="submit">Salvar</button>
+        </form>
+        """
+        response.send_response(200)
+        response.send_header("Content-type", "text/html")
+        response.end_headers()
+        response.wfile.write(html.encode())
+    elif request.method == "POST":
+        tamanho = int(request.headers['Content-Length'])
+        dados = request.rfile.read(tamanho).decode()
+        params = parse_qs(dados)
+
+        nome = params.get("nome", [""])[0]
+        email = params.get("email", [""])[0]
+        telefone = params.get("telefone", [""])[0]
+
+        usuarios = carregar_usuarios()
+        novo_id = max([u["id"] for u in usuarios], default=0) + 1
+
+        usuarios.append({
+            "id": novo_id,
+            "nome": nome,
+            "email": email,
+            "telefone": telefone
+        })
+
+        salvar_usuarios(usuarios)
+
+        response.send_response(303)
+        response.send_header("Location", "/usuarios")
+        response.end_headers()
+
+def excluir_usuario(request, response, id):
+    usuarios = carregar_usuarios()
+    usuario = next((u for u in usuarios if u["id"] == id), None)
+
+    if not usuario:
+        response.send_response(404)
+        response.end_headers()
+        response.wfile.write(b"Usuário não encontrado")
+        return
+
+    if request.method == "GET":
+        html = f"""
+        <h1>Excluir Usuário</h1>
+        <p>Tem certeza que deseja excluir {usuario['nome']}?</p>
+        <form method="POST">
+            <button type="submit">Confirmar Exclusão</button>
+        </form>
+        <a href="/usuarios">Cancelar</a>
+        """
+        response.send_response(200)
+        response.send_header("Content-type", "text/html")
+        response.end_headers()
+        response.wfile.write(html.encode())
+    elif request.method == "POST":
+        usuarios = [u for u in usuarios if u["id"] != id]
+        salvar_usuarios(usuarios)
+        response.send_response(303)
+        response.send_header("Location", "/usuarios")
+        response.end_headers()
+
+def editar_usuario(request, response, id):
+    usuarios = carregar_usuarios()
+    usuario = next((u for u in usuarios if u["id"] == id), None)
+
+    if not usuario:
+        response.send_response(404)
+        response.end_headers()
+        response.wfile.write(b"Usuário não encontrado")
+        return
+
+    if request.method == "GET":
+        html = f"""
+        <h1>Editar Usuário</h1>
+        <form method="POST">
+            Nome: <input type="text" name="nome" value="{usuario['nome']}"><br>
+            Email: <input type="text" name="email" value="{usuario['email']}"><br>
+            Telefone: <input type="text" name="telefone" value="{usuario['telefone']}"><br>
+            <button type="submit">Salvar Alterações</button>
+        </form>
+        <a href="/usuarios">Cancelar</a>
+        """
+        response.send_response(200)
+        response.send_header("Content-type", "text/html")
+        response.end_headers()
+        response.wfile.write(html.encode())
+    elif request.method == "POST":
+        tamanho = int(request.headers['Content-Length'])
+        dados = request.rfile.read(tamanho).decode()
+        params = parse_qs(dados)
+
+        usuario["nome"] = params.get("nome", [""])[0]
+        usuario["email"] = params.get("email", [""])[0]
+        usuario["telefone"] = params.get("telefone", [""])[0]
+
+        salvar_usuarios(usuarios)
+
+        response.send_response(303)
+        response.send_header("Location", "/usuarios")
+        response.end_headers()
